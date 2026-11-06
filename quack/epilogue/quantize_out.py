@@ -36,7 +36,6 @@ import cutlass.cute as cute
 from cutlass import Boolean, Float32, Int32, const_expr
 
 from quack.epilogue.ops import EpiOp, EpiSmemBytes, _get_lane_warp_layouts
-from quack.gemm_tvm_ffi_utils import make_fake_sf_tensor
 from quack.reduce import warp_reduce
 from quack.blockscaled.quantize_utils import (
     FLT_MAX,
@@ -220,6 +219,8 @@ class BlockScaleFactorStore(EpiOp):
         # buffer with a static batch dim of 1 (same convention as input SFA).
         dtype, ndim = key
         assert ndim == 6, f"SFD expects a 6-D blocked scale tensor, got ndim {ndim}"
+        from quack.gemm_tvm_ffi_utils import make_fake_sf_tensor  # torch host interface
+
         return make_fake_sf_tensor(dtype, 1 if fctx.varlen_m else fctx.l)
 
     def _vec_attr(self):

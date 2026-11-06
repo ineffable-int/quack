@@ -26,7 +26,12 @@ There is deliberately NO k-invariant ``colvec`` kind: a per-row scale
 commutes through the GEMM to the epilogue.
 """
 
-import torch
+from quack._optional import torch_installed
+
+if torch_installed():
+    import torch
+else:  # only the torch host interface uses torch
+    torch = None
 
 import cutlass
 import cutlass.cute as cute

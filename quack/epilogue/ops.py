@@ -29,7 +29,12 @@ from cutlass.cutlass_dsl import T, dsl_user_op
 from cutlass._mlir.dialects import llvm
 from cutlass.experimental import primitives as prims
 
-import torch
+from quack._optional import torch_installed
+
+if torch_installed():
+    import torch
+else:  # only the torch host interface below uses torch
+    torch = None
 
 from quack.compile_utils import div_for_dtype, fake_batched, make_fake_tensor
 from quack.cute_dsl_utils import torch2cute_dtype_map

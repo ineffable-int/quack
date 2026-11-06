@@ -7,7 +7,12 @@ from dataclasses import dataclass, fields
 import os
 import re
 
-import torch
+from quack._optional import torch_installed
+
+if torch_installed():
+    import torch
+else:  # the kernels need no torch; only the torch host interface does
+    torch = None
 
 try:
     from triton.tools.disasm import extract
@@ -53,21 +58,25 @@ def _patched_convert_single_arg(arg, arg_name, arg_type, ctx):
 _converter_module._convert_single_arg = _patched_convert_single_arg
 
 
-torch2cute_dtype_map = {
-    torch.uint8: cutlass.Uint8,
-    # Packed fp4: dlpack presents the logical (doubled) K extent to the DSL.
-    torch.float4_e2m1fn_x2: cutlass.Float4E2M1FN,
-    torch.float8_e4m3fn: Float8E4M3FN,
-    torch.float8_e5m2: Float8E5M2,
-    torch.float8_e4m3fn: cutlass.Float8E4M3FN,
-    torch.float8_e5m2: cutlass.Float8E5M2,
-    torch.float8_e8m0fnu: cutlass.Float8E8M0FNU,
-    torch.float16: Float16,
-    torch.bfloat16: BFloat16,
-    torch.float32: Float32,
-    torch.int32: Int32,
-    torch.int64: Int64,
-}
+torch2cute_dtype_map = (
+    {
+        torch.uint8: cutlass.Uint8,
+        # Packed fp4: dlpack presents the logical (doubled) K extent to the DSL.
+        torch.float4_e2m1fn_x2: cutlass.Float4E2M1FN,
+        torch.float8_e4m3fn: Float8E4M3FN,
+        torch.float8_e5m2: Float8E5M2,
+        torch.float8_e4m3fn: cutlass.Float8E4M3FN,
+        torch.float8_e5m2: cutlass.Float8E5M2,
+        torch.float8_e8m0fnu: cutlass.Float8E8M0FNU,
+        torch.float16: Float16,
+        torch.bfloat16: BFloat16,
+        torch.float32: Float32,
+        torch.int32: Int32,
+        torch.int64: Int64,
+    }
+    if torch is not None
+    else {}
+)
 
 
 @lru_cache
@@ -100,7 +109,7 @@ def _parse_arch_str(arch_str: str) -> Tuple[int, int]:
 
 
 @lru_cache
-def _get_device_capacity_cached(device: torch.device = None) -> Tuple[int, int]:
+def _get_device_capacity_cached(device: "torch.device" = None) -> Tuple[int, int]:
     """Return (major, minor) device capability.
 
     Override with QUACK_ARCH (e.g. 'sm_90' or '90') for CPU-only compilation
@@ -113,7 +122,7 @@ def _get_device_capacity_cached(device: torch.device = None) -> Tuple[int, int]:
 
 
 def get_device_capacity(
-    device: torch.device | torch.Tensor | None = None,
+    device: "torch.device | torch.Tensor | None" = None,
 ) -> Tuple[int, int]:
     """Return (major, minor) device capability.
 

@@ -8,13 +8,12 @@ dynamic = ["version"]
 requires-python = ">=3.10"
 dependencies = [
     "nvidia-cutlass-dsl>=4.7",
-    "torch",
     "apache-tvm-ffi>=0.1.6,<0.2",
-    "torch-c-dlpack-ext",
-    "einops",
 ]
 
 [project.optional-dependencies]
+# The kernels import without torch; the torch ops and their host interface need this extra.
+torch = ["torch", "torch-c-dlpack-ext", "einops"]
 cu13 = ["nvidia-cutlass-dsl[cu13]>=4.7"]
 heuristics = ["nvidia-matmul-heuristics"]
 jax = ["jax", "jax-tvm-ffi"]
